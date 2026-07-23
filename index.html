@@ -7,6 +7,10 @@
 <meta name="msapplication-navbutton-color" content="#040804">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Terminal">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>TERMINAL // HABIT &amp; TASK LOG</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap');
@@ -25,6 +29,11 @@
 }
 
 *{box-sizing:border-box;}
+
+:focus-visible{
+  outline:2px solid var(--green-bright);
+  outline-offset:2px;
+}
 
 html,body{
   margin:0;
@@ -497,11 +506,12 @@ body{
   <div class="screen-inner">
 
       <div class="topbar">
-        <button class="icon-btn" id="gearBtn" title="Options">
+        <button class="icon-btn" id="gearBtn" title="Options" aria-label="Options and reset">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
         </button>
         <div class="tabs" id="tabs"></div>
-        <button class="icon-btn" id="saveBtn" title="Export backup">
+        <button class="icon-btn" id="soundBtn" title="Toggle sound & vibration" aria-label="Toggle completion sound and vibration"></button>
+        <button class="icon-btn" id="saveBtn" title="Export backup" aria-label="Export data backup">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M7 4v3h8V4"/></svg>
         </button>
       </div>
@@ -528,6 +538,7 @@ let selectedHabitId = null;
 let selectedStatKey = null;
 let overlay = null;           // 'reset' | null
 let storageOK = true;
+let settings = { feedback: true }; // sound + haptic on completion
 
 const todayStr = () => new Date().toISOString().slice(0,10);
 const dayMs = 86400000;
@@ -548,6 +559,10 @@ async function loadState(){
     const t = await window.storage.get('tasks', false);
     tasks = t ? JSON.parse(t.value) : [];
   }catch(e){ tasks = []; }
+  try{
+    const s = await window.storage.get('settings', false);
+    if(s) settings = Object.assign({feedback:true}, JSON.parse(s.value));
+  }catch(e){ /* keep defaults */ }
 }
 async function saveHabits(){
   try{ await window.storage.set('habits', JSON.stringify(habits), false); }
@@ -555,6 +570,10 @@ async function saveHabits(){
 }
 async function saveTasks(){
   try{ await window.storage.set('tasks', JSON.stringify(tasks), false); }
+  catch(e){ storageOK = false; }
+}
+async function saveSettings(){
+  try{ await window.storage.set('settings', JSON.stringify(settings), false); }
   catch(e){ storageOK = false; }
 }
 
@@ -644,7 +663,44 @@ function flashRow(kind, id){
     row.classList.add('flash-done');
     row.addEventListener('animationend', ()=> row.classList.remove('flash-done'), {once:true});
   });
+  playCompletionFeedback();
 }
+
+/* ---------------- SOUND + HAPTIC FEEDBACK ---------------- */
+let audioCtx = null;
+function playBeep(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(720, now);
+    osc.frequency.setValueAtTime(1080, now + 0.06);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.12, now + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.15);
+  }catch(e){ /* audio not available, fail silently */ }
+}
+function playCompletionFeedback(){
+  if(!settings.feedback) return;
+  playBeep();
+  if(navigator.vibrate){ navigator.vibrate(16); }
+}
+
+const SOUND_ON_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7"/><path d="M18.5 6a9 9 0 010 12"/></svg>';
+const SOUND_OFF_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M16 9l5 6"/><path d="M21 9l-5 6"/></svg>';
+function updateSoundIcon(){
+  const btn = document.getElementById('soundBtn');
+  if(!btn) return;
+  btn.innerHTML = settings.feedback ? SOUND_ON_ICON : SOUND_OFF_ICON;
+  btn.title = settings.feedback ? 'Sound & vibration on — tap to mute' : 'Sound & vibration off — tap to unmute';
+}
+
 
 /* ---------------- DERIVED STATS ---------------- */
 function statsData(){
@@ -992,6 +1048,13 @@ document.getElementById('screen').addEventListener('keydown',(e)=>{
 
 document.getElementById('gearBtn').addEventListener('click', ()=>{ overlay='reset'; render(); });
 
+document.getElementById('soundBtn').addEventListener('click', ()=>{
+  settings.feedback = !settings.feedback;
+  saveSettings();
+  updateSoundIcon();
+  if(settings.feedback) playBeep();
+});
+
 document.getElementById('saveBtn').addEventListener('click', ()=>{
   const data = JSON.stringify({habits, tasks}, null, 2);
   const blob = new Blob([data], {type:'application/json'});
@@ -1007,8 +1070,15 @@ document.getElementById('saveBtn').addEventListener('click', ()=>{
 (async function init(){
   document.getElementById('content').innerHTML = `<div class="empty-msg">LOADING TERMINAL DATA...</div>`;
   await loadState();
+  updateSoundIcon();
   render();
 })();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{ /* not served over http(s), ignore */ });
+  });
+}
 
 })();
 </script>
