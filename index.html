@@ -1,0 +1,38 @@
+# Habit Terminal
+
+A retro CRT-terminal habit tracker and to‑do list, styled after old green-phosphor stat screens. Single-file, no build step, no backend — everything runs and saves right in the browser.
+
+![style](https://img.shields.io/badge/style-CRT%20terminal-2ecc27) ![stack](https://img.shields.io/badge/stack-vanilla%20JS-black)
+
+## Features
+
+- **STATUS** — daily overview, a stat-screen-style breakdown (Discipline, Focus, Endurance, Consistency, Strategy, Momentum, Willpower) derived from your real data, and per-habit streak view
+- **HABITS** — add, check off, and delete daily habits; tracks current streak and best streak
+- **TASKS** — a simple to-do list with open/completed sections
+- **LOG** — a 28-day activity grid plus a log of recently completed tasks
+- Local data export as a JSON backup (tape icon, top right)
+- Fully responsive — works on desktop and phone screens
+- No dependencies beyond two Google Fonts (VT323, Share Tech Mono)
+
+## Running it
+
+Just open `index.html` in a browser. That's it — no install, no server required.
+
+### Host it on GitHub Pages
+
+1. Push this repo to GitHub.
+2. Go to **Settings → Pages**.
+3. Under "Build and deployment", set **Source** to `Deploy from a branch`, branch `main`, folder `/ (root)`.
+4. Save. Your app will be live at `https://<your-username>.github.io/<repo-name>/`.
+
+## Data & privacy
+
+All habit and task data is saved locally to your browser/account via the app's storage layer — nothing is sent to a server, and nothing is shared between users. Use the tape icon to export a JSON backup any time, and the gear icon to reset all data.
+
+## Tech
+
+Plain HTML/CSS/JS, no framework, no build tooling. Everything lives in `index.html`.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
