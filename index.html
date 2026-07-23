@@ -241,7 +241,7 @@ body{
   font-family:'Share Tech Mono',monospace;
   flex:none;
 }
-.row.done .rname{ opacity:0.55; text-decoration:line-through; }
+.row.done .rname{ opacity:0.55; }
 .row.selected.done .rname{ opacity:0.7; }
 
 .empty-msg{
@@ -289,8 +289,8 @@ body{
   min-height:38px;
 }
 .btn:hover{ background:rgba(77,255,77,0.1); }
-.btn.danger{ border-color:#ff5533; color:#ff8866; }
-.btn.danger:hover{ background:rgba(255,85,51,0.1); }
+.btn.danger{ border-color:var(--green-bright); color:var(--green-bright); }
+.btn.danger:hover{ background:var(--green-bright); color:#000; text-shadow:none; }
 .btn.small{ padding:5px 9px; font-size:12px; }
 .btn:disabled{ opacity:0.35; cursor:default; }
 
