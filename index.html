@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#040804">
+<meta name="msapplication-navbutton-color" content="#040804">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>TERMINAL // HABIT &amp; TASK LOG</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap');
+
+:root{
+  --bg:#040804;
+  --bg-panel:#081208;
+  --bg-panel-2:#0b160b;
+  --green-bright:#4dff4d;
+  --green-mid:#26cc26;
+  --green-dim:#0e5a0e;
+  --green-faint:#0a3d0a;
+  --glow:rgba(77,255,77,0.55);
+  --black:#000000;
+  --border-radius:3px;
+}
+
+*{box-sizing:border-box;}
+
+html,body{
+  margin:0;
+  padding:0;
+  background:#000;
+  min-height:100vh;
+  font-family:'Share Tech Mono', monospace;
+  color:var(--green-bright);
+}
+
+body{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  padding:max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+}
+
+.screen{
+  position:relative;
+  width:100%;
+  max-width:920px;
+  background:radial-gradient(ellipse at center, #061006 0%, #020602 100%);
+  border-radius:8px;
+  overflow:hidden;
+  min-height:min(640px, 82dvh);
+  padding:18px 20px 14px;
+  box-shadow:0 0 0 1px rgba(77,255,77,0.15), 0 20px 60px rgba(0,0,0,0.8), inset 0 0 60px rgba(0,0,0,0.9), inset 0 0 8px rgba(0,0,0,0.9);
+}
+
+.texture{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:4;
+  opacity:0.5;
+  mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0  0 0 0 0 1  0 0 0 0 0  0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size:120px 120px;
+}
+
+.texture::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:repeating-linear-gradient(
+    90deg,
+    rgba(0,0,0,0) 0px,
+    rgba(0,0,0,0) 2px,
+    rgba(0,0,0,0.06) 3px
+  );
+}
+
+.screen::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:repeating-linear-gradient(
+    to bottom,
+    rgba(0,0,0,0) 0px,
+    rgba(0,0,0,0) 2px,
+    rgba(0,0,0,0.35) 3px
+  );
+  pointer-events:none;
+  z-index:5;
+}
+
+.screen::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%);
+  pointer-events:none;
+  z-index:6;
+}
+
+.crt-flicker{
+  animation:flicker 6.5s infinite;
+}
+@keyframes flicker{
+  0%,100%{opacity:1;}
+  92%{opacity:1;}
+  93%{opacity:0.92;}
+  94%{opacity:1;}
+  95%{opacity:0.96;}
+  96%{opacity:1;}
+}
+
+.glow{
+  text-shadow:0 0 2px var(--glow), 0 0 8px rgba(77,255,77,0.25);
+}
+
+.screen-inner{
+  position:relative;
+  z-index:2;
+}
+
+/* ---------- HEADER ---------- */
+.topbar{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding-bottom:6px;
+  border-bottom:2px solid var(--green-dim);
+}
+.icon-btn{
+  width:32px;
+  height:32px;
+  flex:none;
+  border:2px solid var(--green-mid);
+  border-radius:6px;
+  background:transparent;
+  color:var(--green-bright);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.icon-btn:hover{ background:rgba(77,255,77,0.08); }
+.icon-btn svg{ width:16px; height:16px; }
+
+.tabs{
+  flex:1;
+  display:flex;
+  justify-content:space-between;
+  gap:4px;
+}
+.tab{
+  font-family:'VT323', monospace;
+  font-size:22px;
+  letter-spacing:2px;
+  background:none;
+  border:none;
+  color:var(--green-dim);
+  cursor:pointer;
+  padding:2px 6px;
+}
+.tab.active{
+  color:var(--green-bright);
+  text-shadow:0 0 2px var(--glow), 0 0 10px rgba(77,255,77,0.4);
+  border-bottom:3px solid var(--green-bright);
+}
+.tab:hover:not(.active){ color:var(--green-mid); }
+
+.subtabs{
+  display:flex;
+  gap:22px;
+  padding:8px 2px 10px;
+  font-size:15px;
+  letter-spacing:1px;
+  border-bottom:1px solid var(--green-faint);
+  margin-bottom:12px;
+}
+.subtab{
+  cursor:pointer;
+  color:var(--green-dim);
+  text-transform:uppercase;
+}
+.subtab.active{ color:var(--green-bright); text-shadow:0 0 6px var(--glow); }
+
+/* ---------- LAYOUT ---------- */
+.content{
+  display:flex;
+  gap:18px;
+  min-height:400px;
+}
+.panel-list{
+  flex:1.3;
+  min-width:0;
+}
+.panel-detail{
+  flex:1;
+  border-left:1px solid var(--green-faint);
+  padding-left:18px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:left;
+}
+
+.row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:9px 10px;
+  cursor:pointer;
+  border:1px solid transparent;
+  margin-bottom:2px;
+  font-size:16px;
+  min-height:40px;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.row:hover{ border-color:var(--green-faint); }
+.row.selected{
+  background:var(--green-bright);
+  color:#000;
+  text-shadow:none;
+  border-radius:2px;
+}
+.row .rname{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.row .rval{
+  font-family:'VT323',monospace;
+  font-size:20px;
+  flex:none;
+  margin-left:10px;
+}
+.checkbox{
+  font-family:'Share Tech Mono',monospace;
+  flex:none;
+}
+.row.done .rname{ opacity:0.55; }
+
+@keyframes doneFlash{
+  0%{ background:transparent; color:var(--green-bright); text-shadow:0 0 2px var(--glow); box-shadow:0 0 0 0 rgba(77,255,77,0); transform:scale(1); }
+  12%{ background:var(--green-bright); color:#000; text-shadow:none; box-shadow:0 0 26px 6px var(--glow); transform:scale(1.015); }
+  55%{ background:var(--green-bright); color:#000; text-shadow:none; box-shadow:0 0 14px 2px var(--glow); transform:scale(1); }
+  100%{ background:transparent; color:var(--green-bright); text-shadow:0 0 2px var(--glow); box-shadow:0 0 0 0 rgba(77,255,77,0); transform:scale(1); }
+}
+.row.flash-done{
+  animation:doneFlash 0.6s ease-out;
+}
+.row.selected.done .rname{ opacity:0.7; }
+
+.empty-msg{
+  color:var(--green-dim);
+  font-size:14px;
+  padding:14px 10px;
+  border:1px dashed var(--green-faint);
+  border-radius:4px;
+  line-height:1.6;
+}
+
+/* new item input row */
+.new-row{
+  display:flex;
+  gap:6px;
+  margin-top:10px;
+  align-items:center;
+}
+.new-row input{
+  flex:1;
+  min-width:0;
+  background:#000;
+  border:1px solid var(--green-dim);
+  color:var(--green-bright);
+  font-family:'Share Tech Mono',monospace;
+  font-size:16px;
+  padding:10px 10px;
+  border-radius:3px;
+  outline:none;
+}
+.new-row input:focus{ border-color:var(--green-bright); box-shadow:0 0 6px rgba(77,255,77,0.3); background:#000; }
+.new-row input::placeholder{ color:var(--green-dim); }
+.btn{
+  font-family:'Share Tech Mono',monospace;
+  background:transparent;
+  border:1px solid var(--green-mid);
+  color:var(--green-bright);
+  padding:8px 12px;
+  border-radius:3px;
+  cursor:pointer;
+  font-size:13px;
+  letter-spacing:1px;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  min-height:38px;
+}
+.btn:hover{ background:rgba(77,255,77,0.1); }
+.btn.danger{ border-color:var(--green-bright); color:var(--green-bright); }
+.btn.danger:hover{ background:var(--green-bright); color:#000; text-shadow:none; }
+.btn.small{ padding:5px 9px; font-size:12px; }
+.btn:disabled{ opacity:0.35; cursor:default; }
+
+/* ---------- DETAIL PANEL ---------- */
+.ring-wrap{
+  margin:6px 0 14px;
+}
+.detail-title{
+  font-family:'VT323',monospace;
+  font-size:26px;
+  letter-spacing:1px;
+  margin-bottom:6px;
+  color:var(--green-bright);
+}
+.detail-sub{
+  font-size:12px;
+  color:var(--green-dim);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-bottom:14px;
+}
+.detail-text{
+  font-size:14px;
+  line-height:1.7;
+  color:var(--green-mid);
+}
+.stat-line{
+  display:flex;
+  justify-content:space-between;
+  font-size:13px;
+  padding:4px 0;
+  border-bottom:1px solid var(--green-faint);
+  width:100%;
+}
+.detail-actions{
+  margin-top:auto;
+  display:flex;
+  gap:8px;
+  padding-top:14px;
+  width:100%;
+}
+.placeholder-figure{
+  color:var(--green-dim);
+  font-size:13px;
+  text-align:center;
+  padding:30px 10px;
+  line-height:1.6;
+}
+
+/* ---------- BOTTOM STATUS BAR ---------- */
+.statusbar{
+  margin-top:16px;
+  border-top:2px solid var(--green-dim);
+  padding-top:10px;
+  display:flex;
+  align-items:center;
+  gap:20px;
+  font-family:'VT323',monospace;
+  font-size:19px;
+}
+.statusbar .seg{ display:flex; align-items:center; gap:8px; flex:none; }
+.statusbar .bar-seg{ flex:1; display:flex; align-items:center; gap:10px; }
+.bar-outer{
+  flex:1;
+  height:14px;
+  border:1px solid var(--green-mid);
+  border-radius:2px;
+  overflow:hidden;
+  background:rgba(77,255,77,0.05);
+}
+.bar-inner{
+  height:100%;
+  background:var(--green-bright);
+  box-shadow:0 0 6px var(--glow);
+  transition:width 0.4s ease;
+}
+
+/* ---------- OVERLAY MODAL ---------- */
+.overlay{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,0.75);
+  z-index:20;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.modal{
+  background:#04140c;
+  border:2px solid var(--green-mid);
+  border-radius:6px;
+  padding:22px 24px;
+  max-width:340px;
+  box-shadow:0 0 24px rgba(77,255,77,0.25);
+}
+.modal h3{
+  font-family:'VT323',monospace;
+  font-size:22px;
+  margin:0 0 10px;
+  letter-spacing:1px;
+}
+.modal p{ font-size:13px; color:var(--green-mid); line-height:1.6; margin:0 0 16px; }
+.modal .modal-actions{ display:flex; gap:10px; justify-content:flex-end; }
+
+/* cursor blink */
+.cursor{
+  display:inline-block;
+  width:8px;
+  height:14px;
+  background:var(--green-bright);
+  margin-left:2px;
+  animation:blink 1s steps(1) infinite;
+  vertical-align:middle;
+}
+@keyframes blink{ 50%{ opacity:0; } }
+
+/* calendar grid for LOG tab */
+.cal-grid{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:4px;
+  margin-top:10px;
+}
+.cal-cell{
+  aspect-ratio:1;
+  border:1px solid var(--green-faint);
+  border-radius:2px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:10px;
+  color:var(--green-dim);
+}
+.cal-cell.hit{
+  background:var(--green-bright);
+  color:#000;
+  border-color:var(--green-bright);
+}
+.cal-cell.today{ box-shadow:inset 0 0 0 2px var(--green-bright); }
+
+.section-label{
+  font-size:12px;
+  letter-spacing:2px;
+  color:var(--green-dim);
+  text-transform:uppercase;
+  margin:14px 0 4px;
+}
+
+@media (max-width:640px){
+  body{ padding:10px; padding:max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
+  .screen{ border-radius:6px; padding:12px 12px 10px; min-height:min(600px, 88dvh); }
+  .content{ flex-direction:column; min-height:0; }
+  .panel-detail{ border-left:none; border-top:1px solid var(--green-faint); padding-left:0; padding-top:14px; align-items:flex-start; }
+  .topbar{ gap:8px; }
+  .tabs{ overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; justify-content:flex-start; gap:4px; }
+  .tabs::-webkit-scrollbar{ display:none; }
+  .tab{ font-size:17px; padding:6px 8px; flex:none; }
+  .subtabs{ overflow-x:auto; -webkit-overflow-scrolling:touch; gap:16px; scrollbar-width:none; }
+  .subtabs::-webkit-scrollbar{ display:none; }
+  .subtab{ flex:none; padding:2px 0; }
+  .row{ font-size:15px; padding:10px 8px; }
+  .row .rval{ font-size:18px; }
+  .new-row{ flex-wrap:wrap; }
+  .new-row input{ min-width:100%; }
+  .new-row .btn{ flex:1; }
+  .statusbar{ flex-wrap:wrap; row-gap:10px; font-size:16px; }
+  .statusbar .bar-seg{ order:3; width:100%; flex-basis:100%; }
+  .detail-actions{ flex-wrap:wrap; }
+  .detail-actions .btn{ flex:1; min-width:120px; }
+  .modal{ max-width:88vw; }
+}
+
+@media (max-width:400px){
+  .tab{ font-size:15px; }
+  .detail-title{ font-size:22px; }
+  .icon-btn{ width:34px; height:34px; }
+}
+
+@media (hover:none){
+  .row:hover{ border-color:transparent; }
+  .btn:hover{ background:transparent; }
+  .icon-btn:hover{ background:transparent; }
+}
+</style>
+</head>
+<body>
+
+<div class="screen crt-flicker glow" id="screen">
+  <div class="texture"></div>
+  <div class="screen-inner">
+
+      <div class="topbar">
+        <button class="icon-btn" id="gearBtn" title="Options">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </button>
+        <div class="tabs" id="tabs"></div>
+        <button class="icon-btn" id="saveBtn" title="Export backup">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M7 4v3h8V4"/></svg>
+        </button>
+      </div>
+
+      <div id="subtabsWrap"></div>
+
+      <div class="content" id="content"></div>
+
+      <div class="statusbar" id="statusbar"></div>
+    </div>
+
+    <div id="overlayWrap"></div>
+  </div>
+
+<script>
+(function(){
+
+/* ---------------- STATE ---------------- */
+let habits = [];
+let tasks = [];
+let mainTab = 'STATUS';       // STATUS | HABITS | TASKS | LOG
+let statusSub = 'OVERVIEW';   // OVERVIEW | STATS | STREAKS
+let selectedHabitId = null;
+let selectedStatKey = null;
+let overlay = null;           // 'reset' | null
+let storageOK = true;
+
+const todayStr = () => new Date().toISOString().slice(0,10);
+const dayMs = 86400000;
+
+function daysBetween(a,b){
+  return Math.round((new Date(b) - new Date(a)) / dayMs);
+}
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+/* ---------------- PERSISTENCE ---------------- */
+async function loadState(){
+  try{
+    const h = await window.storage.get('habits', false);
+    habits = h ? JSON.parse(h.value) : [];
+  }catch(e){ habits = []; }
+  try{
+    const t = await window.storage.get('tasks', false);
+    tasks = t ? JSON.parse(t.value) : [];
+  }catch(e){ tasks = []; }
+}
+async function saveHabits(){
+  try{ await window.storage.set('habits', JSON.stringify(habits), false); }
+  catch(e){ storageOK = false; }
+}
+async function saveTasks(){
+  try{ await window.storage.set('tasks', JSON.stringify(tasks), false); }
+  catch(e){ storageOK = false; }
+}
+
+/* ---------------- HABIT LOGIC ---------------- */
+function toggleHabitToday(id){
+  const h = habits.find(x=>x.id===id);
+  if(!h) return;
+  const t = todayStr();
+  let becomingDone = false;
+  if(h.history[t]){
+    delete h.history[t];
+    // recompute streak from history
+    h.streak = computeCurrentStreak(h);
+  } else {
+    h.history[t] = true;
+    h.streak = computeCurrentStreak(h);
+    if(h.streak > h.best) h.best = h.streak;
+    becomingDone = true;
+  }
+  saveHabits();
+  render();
+  if(becomingDone) flashRow('habit', id);
+}
+
+function computeCurrentStreak(h){
+  let streak = 0;
+  let cursor = new Date();
+  while(true){
+    const ds = cursor.toISOString().slice(0,10);
+    if(h.history[ds]){
+      streak++;
+      cursor = new Date(cursor.getTime() - dayMs);
+    } else {
+      // allow today to be unchecked without breaking streak display of yesterday chain
+      if(ds === todayStr()){ cursor = new Date(cursor.getTime() - dayMs); continue; }
+      break;
+    }
+  }
+  return streak;
+}
+
+function addHabit(name){
+  name = name.trim();
+  if(!name) return;
+  habits.push({ id: uid(), name, notes:'', streak:0, best:0, history:{} });
+  saveHabits();
+  render();
+}
+function deleteHabit(id){
+  habits = habits.filter(h=>h.id!==id);
+  if(selectedHabitId===id) selectedHabitId=null;
+  saveHabits();
+  render();
+}
+
+/* ---------------- TASK LOGIC ---------------- */
+function addTask(text){
+  text = text.trim();
+  if(!text) return;
+  tasks.push({ id: uid(), text, done:false, created: todayStr(), completedOn:null });
+  saveTasks();
+  render();
+}
+function toggleTask(id){
+  const t = tasks.find(x=>x.id===id);
+  if(!t) return;
+  t.done = !t.done;
+  t.completedOn = t.done ? todayStr() : null;
+  saveTasks();
+  render();
+  if(t.done) flashRow('task', id);
+}
+function deleteTask(id){
+  tasks = tasks.filter(t=>t.id!==id);
+  saveTasks();
+  render();
+}
+
+function flashRow(kind, id){
+  requestAnimationFrame(()=>{
+    const trigger = document.querySelector(`[data-action="toggle-${kind}"][data-id="${id}"]`);
+    const row = trigger ? trigger.closest('.row') : null;
+    if(!row) return;
+    row.classList.remove('flash-done');
+    // force reflow so the animation restarts if it was already present
+    void row.offsetWidth;
+    row.classList.add('flash-done');
+    row.addEventListener('animationend', ()=> row.classList.remove('flash-done'), {once:true});
+  });
+}
+
+/* ---------------- DERIVED STATS ---------------- */
+function statsData(){
+  const habitsDoneToday = habits.filter(h=>h.history[todayStr()]).length;
+  const consistency = habits.length ? Math.round((habitsDoneToday/habits.length)*100) : 0;
+  const longestCurrent = habits.reduce((m,h)=>Math.max(m,h.streak),0);
+  const bestEver = habits.reduce((m,h)=>Math.max(m,h.best),0);
+  const totalCheckins = habits.reduce((s,h)=>s+Object.keys(h.history).length,0);
+  const tasksDoneToday = tasks.filter(t=>t.done && t.completedOn===todayStr()).length;
+  const weekAgo = new Date(Date.now()-7*dayMs);
+  const tasksThisWeek = tasks.filter(t=>t.done && t.completedOn && new Date(t.completedOn) >= weekAgo).length;
+  const openTasks = tasks.filter(t=>!t.done).length;
+
+  return [
+    {key:'DISCIPLINE', value:longestCurrent, desc:'Discipline measures your longest habit streak still running right now. It grows every day you show up, and resets the moment you miss one.'},
+    {key:'FOCUS', value:tasksDoneToday, desc:'Focus tracks how many tasks you have closed out today. A high number means your attention stayed where you pointed it.'},
+    {key:'ENDURANCE', value:totalCheckins, desc:'Endurance is the total number of habit check-ins you have logged, ever. It never goes down — it is a record of everything you have shown up for.'},
+    {key:'CONSISTENCY', value:consistency+'%', desc:"Consistency is the share of today's habits you have already completed. It resets each morning to give you a clean read on the day."},
+    {key:'STRATEGY', value:openTasks, desc:'Strategy reflects how many tasks are still open on your list. Keep it lean — a shorter list is easier to actually finish.'},
+    {key:'MOMENTUM', value:tasksThisWeek, desc:'Momentum counts tasks completed in the last seven days. It shows whether you are speeding up or slowing down.'},
+    {key:'WILLPOWER', value:bestEver, desc:'Willpower holds your best habit streak of all time — the record to beat. Once set, it only moves up.'}
+  ];
+}
+
+/* ---------------- RENDER: TOP TABS ---------------- */
+const MAIN_TABS = ['STATUS','HABITS','TASKS','LOG'];
+function renderTabs(){
+  const el = document.getElementById('tabs');
+  el.innerHTML = MAIN_TABS.map(t=>
+    `<button class="tab ${t===mainTab?'active':''}" data-action="main-tab" data-tab="${t}">${t}</button>`
+  ).join('');
+}
+
+function renderSubtabs(){
+  const wrap = document.getElementById('subtabsWrap');
+  if(mainTab==='STATUS'){
+    const subs = ['OVERVIEW','STATS','STREAKS'];
+    wrap.innerHTML = `<div class="subtabs">${subs.map(s=>
+      `<div class="subtab ${s===statusSub?'active':''}" data-action="status-sub" data-sub="${s}">${s}</div>`
+    ).join('')}</div>`;
+  } else {
+    wrap.innerHTML = '';
+  }
+}
+
+/* ---------------- RENDER: CONTENT ---------------- */
+function ringSvg(pct, big){
+  const size = big?120:90, r = size/2-8, c = 2*Math.PI*r;
+  const off = c - (Math.min(Math.max(pct,0),100)/100)*c;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" stroke="var(--green-faint)" stroke-width="6" fill="none"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" stroke="var(--green-bright)" stroke-width="6" fill="none"
+      stroke-dasharray="${c}" stroke-dashoffset="${off}" stroke-linecap="round"
+      transform="rotate(-90 ${size/2} ${size/2})" style="filter:drop-shadow(0 0 4px var(--glow));"/>
+    <text x="50%" y="53%" text-anchor="middle" fill="var(--green-bright)" font-family="VT323, monospace" font-size="${big?30:22}">${pct}%</text>
+  </svg>`;
+}
+
+function renderContent(){
+  const el = document.getElementById('content');
+  if(mainTab==='STATUS') return renderStatus(el);
+  if(mainTab==='HABITS') return renderHabits(el);
+  if(mainTab==='TASKS') return renderTasks(el);
+  if(mainTab==='LOG') return renderLog(el);
+}
+
+function renderStatus(el){
+  if(statusSub==='OVERVIEW'){
+    const t = todayStr();
+    const habitRows = habits.map(h=>{
+      const done = !!h.history[t];
+      return `<div class="row ${done?'done':''}" data-action="toggle-habit" data-id="${h.id}">
+        <span class="rname"><span class="checkbox">[${done?'X':' '}]</span> ${escapeHtml(h.name)}</span>
+        <span class="rval">${h.streak}d</span>
+      </div>`;
+    }).join('') || `<div class="empty-msg">No habits logged yet. Open the HABITS tab to add your first one.</div>`;
+
+    const taskRows = tasks.filter(x=>!x.done).slice(0,6).map(x=>
+      `<div class="row" data-action="toggle-task" data-id="${x.id}">
+        <span class="rname"><span class="checkbox">[ ]</span> ${escapeHtml(x.text)}</span>
+      </div>`
+    ).join('') || `<div class="empty-msg">Task list is clear. Add one in the TASKS tab.</div>`;
+
+    el.innerHTML = `
+      <div class="panel-list">
+        <div class="section-label">Today's Habits</div>
+        ${habitRows}
+        <div class="section-label">Open Tasks</div>
+        ${taskRows}
+      </div>
+      <div class="panel-detail">
+        ${ringSvg(overviewPct(), true)}
+        <div class="detail-title">DAY SUMMARY</div>
+        <div class="detail-sub">${new Date().toDateString()}</div>
+        <div class="detail-text">
+          You've completed <strong>${habits.filter(h=>h.history[t]).length}</strong> of <strong>${habits.length}</strong> habits
+          and <strong>${tasks.filter(x=>x.done && x.completedOn===t).length}</strong> tasks today.
+          ${habits.length===0 && tasks.length===0 ? 'Start by logging a habit or a task.' : 'Keep the streak alive.'}
+        </div>
+      </div>`;
+    return;
+  }
+
+  if(statusSub==='STATS'){
+    const stats = statsData();
+    if(!selectedStatKey) selectedStatKey = stats[0].key;
+    const sel = stats.find(s=>s.key===selectedStatKey) || stats[0];
+    el.innerHTML = `
+      <div class="panel-list">
+        ${stats.map(s=>`
+          <div class="row ${s.key===selectedStatKey?'selected':''}" data-action="select-stat" data-key="${s.key}">
+            <span class="rname">${s.key}</span>
+            <span class="rval">${s.value}</span>
+          </div>`).join('')}
+      </div>
+      <div class="panel-detail">
+        ${ringSvg(typeof sel.value==='string' && sel.value.endsWith('%') ? parseInt(sel.value) : Math.min(100, sel.value*10), true)}
+        <div class="detail-title">${sel.key}</div>
+        <div class="detail-text">${sel.desc}</div>
+      </div>`;
+    return;
+  }
+
+  if(statusSub==='STREAKS'){
+    const sorted = [...habits].sort((a,b)=>b.streak-a.streak);
+    if(!selectedHabitId && sorted[0]) selectedHabitId = sorted[0].id;
+    const sel = habits.find(h=>h.id===selectedHabitId);
+    el.innerHTML = `
+      <div class="panel-list">
+        ${sorted.map(h=>`
+          <div class="row ${h.id===selectedHabitId?'selected':''}" data-action="select-habit" data-id="${h.id}">
+            <span class="rname">${escapeHtml(h.name)}</span>
+            <span class="rval">${h.streak}d</span>
+          </div>`).join('') || `<div class="empty-msg">No habits yet. Add some in the HABITS tab to see streaks here.</div>`}
+      </div>
+      <div class="panel-detail">
+        ${sel ? habitDetailInner(sel) : `<div class="placeholder-figure">SELECT A HABIT<br>TO VIEW STREAK DATA</div>`}
+      </div>`;
+    return;
+  }
+}
+
+function overviewPct(){
+  const t = todayStr();
+  const totalItems = habits.length + tasks.filter(x=>!x.done || x.completedOn===t).length;
+  if(totalItems===0) return 0;
+  const done = habits.filter(h=>h.history[t]).length + tasks.filter(x=>x.done && x.completedOn===t).length;
+  return Math.round((done/totalItems)*100);
+}
+
+function habitDetailInner(h){
+  return `
+    ${ringSvg(Math.min(100, h.streak*10), true)}
+    <div class="detail-title">${escapeHtml(h.name)}</div>
+    <div class="detail-sub">CURRENT STREAK</div>
+    <div class="stat-line"><span>Current streak</span><span>${h.streak} day${h.streak===1?'':'s'}</span></div>
+    <div class="stat-line"><span>Best streak</span><span>${h.best} day${h.best===1?'':'s'}</span></div>
+    <div class="stat-line"><span>Total check-ins</span><span>${Object.keys(h.history).length}</span></div>
+    <div class="detail-actions">
+      <button class="btn small" data-action="toggle-habit" data-id="${h.id}">TOGGLE TODAY</button>
+      <button class="btn small danger" data-action="delete-habit" data-id="${h.id}">DELETE</button>
+    </div>`;
+}
+
+function renderHabits(el){
+  if(selectedHabitId && !habits.find(h=>h.id===selectedHabitId)) selectedHabitId = null;
+  if(!selectedHabitId && habits[0]) selectedHabitId = habits[0].id;
+  const sel = habits.find(h=>h.id===selectedHabitId);
+  const t = todayStr();
+
+  el.innerHTML = `
+    <div class="panel-list">
+      ${habits.map(h=>{
+        const done = !!h.history[t];
+        return `<div class="row ${h.id===selectedHabitId?'selected':''} ${done?'done':''}" data-action="select-habit" data-id="${h.id}">
+          <span class="rname"><span class="checkbox" data-action="toggle-habit" data-id="${h.id}">[${done?'X':' '}]</span> ${escapeHtml(h.name)}</span>
+          <span class="rval">${h.streak}d</span>
+        </div>`;
+      }).join('') || `<div class="empty-msg">No habits tracked yet. Add one below — daily check-ins build your streak.</div>`}
+      <div class="new-row">
+        <input type="text" id="newHabitInput" placeholder="New habit name..." maxlength="60">
+        <button class="btn" data-action="add-habit">ADD</button>
+      </div>
+    </div>
+    <div class="panel-detail">
+      ${sel ? habitDetailInner(sel) : `<div class="placeholder-figure">NO HABIT SELECTED</div>`}
+    </div>`;
+}
+
+function renderTasks(el){
+  const open = tasks.filter(t=>!t.done);
+  const done = tasks.filter(t=>t.done);
+  el.innerHTML = `
+    <div class="panel-list">
+      <div class="section-label">Open (${open.length})</div>
+      ${open.map(x=>`
+        <div class="row" data-action="toggle-task" data-id="${x.id}">
+          <span class="rname"><span class="checkbox">[ ]</span> ${escapeHtml(x.text)}</span>
+          <span class="rval"><button class="btn small danger" data-action="delete-task" data-id="${x.id}" data-stop="1">DEL</button></span>
+        </div>`).join('') || `<div class="empty-msg">Nothing pending. Add a task below.</div>`}
+      <div class="new-row">
+        <input type="text" id="newTaskInput" placeholder="New task..." maxlength="80">
+        <button class="btn" data-action="add-task">ADD</button>
+      </div>
+      ${done.length ? `<div class="section-label">Completed (${done.length})</div>` + done.map(x=>`
+        <div class="row done" data-action="toggle-task" data-id="${x.id}">
+          <span class="rname"><span class="checkbox">[X]</span> ${escapeHtml(x.text)}</span>
+          <span class="rval"><button class="btn small danger" data-action="delete-task" data-id="${x.id}" data-stop="1">DEL</button></span>
+        </div>`).join('') : ''}
+    </div>
+    <div class="panel-detail">
+      ${ringSvg(tasks.length ? Math.round((done.length/tasks.length)*100) : 0, true)}
+      <div class="detail-title">TASK LOG</div>
+      <div class="detail-text">
+        ${tasks.length===0 ? 'Add a task on the left to start tracking your to-do list.' :
+        `${done.length} of ${tasks.length} tasks complete. Checked items move to the completed section below the list.`}
+      </div>
+    </div>`;
+}
+
+function renderLog(el){
+  // 28-day grid combining all habit activity
+  const days = [];
+  for(let i=27;i>=0;i--){
+    const d = new Date(Date.now()-i*dayMs);
+    const ds = d.toISOString().slice(0,10);
+    const count = habits.filter(h=>h.history[ds]).length;
+    days.push({ds, count, day:d.getDate(), isToday: ds===todayStr()});
+  }
+  el.innerHTML = `
+    <div class="panel-list">
+      <div class="section-label">Last 28 Days — Habit Activity</div>
+      <div class="cal-grid">
+        ${days.map(d=>`<div class="cal-cell ${d.count>0?'hit':''} ${d.isToday?'today':''}" title="${d.ds}: ${d.count} habit(s)">${d.day}</div>`).join('')}
+      </div>
+      <div class="section-label">Recently Completed Tasks</div>
+      ${tasks.filter(t=>t.done).slice(-8).reverse().map(t=>`
+        <div class="row"><span class="rname">${escapeHtml(t.text)}</span><span class="rval">${t.completedOn||''}</span></div>
+      `).join('') || `<div class="empty-msg">No completed tasks logged yet.</div>`}
+    </div>
+    <div class="panel-detail">
+      ${ringSvg(logConsistency(days), true)}
+      <div class="detail-title">ACTIVITY LOG</div>
+      <div class="detail-text">
+        Filled squares mark days with at least one habit completed. Brighter, denser rows mean a stronger run — gaps show where the chain broke.
+      </div>
+    </div>`;
+}
+function logConsistency(days){
+  const active = days.filter(d=>d.count>0).length;
+  return Math.round((active/days.length)*100);
+}
+
+/* ---------------- STATUS BAR ---------------- */
+function renderStatusbar(){
+  const el = document.getElementById('statusbar');
+  const t = todayStr();
+  const totalCheckins = habits.reduce((s,h)=>s+Object.keys(h.history).length,0);
+  const level = 1 + Math.floor((totalCheckins + tasks.filter(x=>x.done).length) / 5);
+  const tasksDone = tasks.filter(x=>x.done && x.completedOn===t).length;
+  const tasksTotal = tasks.filter(x=>!x.done || x.completedOn===t).length;
+  const pct = overviewPct();
+
+  el.innerHTML = `
+    <div class="seg">LVL ${level}</div>
+    <div class="bar-seg">
+      <span>TODAY</span>
+      <div class="bar-outer"><div class="bar-inner" style="width:${pct}%"></div></div>
+      <span>${pct}%</span>
+    </div>
+    <div class="seg">TASKS ${tasksDone}/${tasksTotal || 0}</div>
+  `;
+}
+
+/* ---------------- OVERLAY ---------------- */
+function renderOverlay(){
+  const wrap = document.getElementById('overlayWrap');
+  if(overlay==='reset'){
+    wrap.innerHTML = `
+      <div class="overlay" data-action="close-overlay">
+        <div class="modal" onclick="event.stopPropagation()">
+          <h3>RESET ALL DATA?</h3>
+          <p>This clears every habit and task permanently. This cannot be undone.</p>
+          <div class="modal-actions">
+            <button class="btn" data-action="close-overlay">CANCEL</button>
+            <button class="btn danger" data-action="confirm-reset">RESET</button>
+          </div>
+        </div>
+      </div>`;
+  } else {
+    wrap.innerHTML = '';
+  }
+}
+
+/* ---------------- UTIL ---------------- */
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------------- MASTER RENDER ---------------- */
+function render(){
+  renderTabs();
+  renderSubtabs();
+  renderContent();
+  renderStatusbar();
+  renderOverlay();
+}
+
+/* ---------------- EVENTS ---------------- */
+document.getElementById('screen').addEventListener('click', (e)=>{
+  const target = e.target.closest('[data-action]');
+  if(!target) return;
+  const action = target.dataset.action;
+
+  if(action==='main-tab'){ mainTab = target.dataset.tab; selectedHabitId=null; render(); return; }
+  if(action==='status-sub'){ statusSub = target.dataset.sub; render(); return; }
+  if(action==='select-habit'){ selectedHabitId = target.dataset.id; render(); return; }
+  if(action==='select-stat'){ selectedStatKey = target.dataset.key; render(); return; }
+  if(action==='toggle-habit'){ toggleHabitToday(target.dataset.id); return; }
+  if(action==='delete-habit'){ deleteHabit(target.dataset.id); return; }
+  if(action==='toggle-task'){ toggleTask(target.dataset.id); return; }
+  if(action==='delete-task'){ deleteTask(target.dataset.id); return; }
+  if(action==='add-habit'){
+    const inp = document.getElementById('newHabitInput');
+    addHabit(inp.value);
+    return;
+  }
+  if(action==='add-task'){
+    const inp = document.getElementById('newTaskInput');
+    addTask(inp.value);
+    return;
+  }
+  if(action==='close-overlay'){ overlay=null; render(); return; }
+  if(action==='confirm-reset'){
+    habits=[]; tasks=[]; saveHabits(); saveTasks(); overlay=null; render(); return;
+  }
+});
+
+document.getElementById('screen').addEventListener('keydown',(e)=>{
+  if(e.key==='Enter'){
+    if(e.target.id==='newHabitInput'){ addHabit(e.target.value); }
+    if(e.target.id==='newTaskInput'){ addTask(e.target.value); }
+  }
+});
+
+document.getElementById('gearBtn').addEventListener('click', ()=>{ overlay='reset'; render(); });
+
+document.getElementById('saveBtn').addEventListener('click', ()=>{
+  const data = JSON.stringify({habits, tasks}, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'habit-terminal-backup.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+/* ---------------- INIT ---------------- */
+(async function init(){
+  document.getElementById('content').innerHTML = `<div class="empty-msg">LOADING TERMINAL DATA...</div>`;
+  await loadState();
+  render();
+})();
+
+})();
+</script>
+</body>
+</html>
